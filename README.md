@@ -1,4 +1,4 @@
-# passable-status-summary-card
+# Passable Status Summary Card
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
 [![version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
@@ -32,7 +32,7 @@ A flexible, high-performance universal status summary card for Home Assistant Lo
    https://github.com/GBear09/passable-status-summary-card
    ```
 4. Set the Category to **Dashboard** (or **Lovelace**) and click **Add**.
-5. Find **passable-status-summary-card** in HACS, click **Download**, and reload your browser dashboard.
+5. Find **Passable Status Summary Card** in HACS, click **Download**, and reload your browser dashboard.
 
 ---
 

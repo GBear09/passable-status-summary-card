@@ -1,7 +1,7 @@
 {
   "name": "passable-status-summary-card",
   "version": "1.0.0",
-  "description": "A versatile and customizable status summary card for Home Assistant Lovelace dashboards.",
+  "description": "It summarizes entity status and alerts. Don't expect a miracle.",
   "main": "passable-status-summary-card.js",
   "repository": {
     "type": "git",

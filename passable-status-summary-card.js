@@ -2136,7 +2136,7 @@ if (!customElements.get("passable-status-summary-card")) {
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "passable-status-summary-card",
-  name: "passable-status-summary-card",
+  name: "Passable Status Summary Card",
   preview: true,
-  description: "A universal status summary card with alerts.",
+  description: "It summarizes entity status and alerts. Don't expect a miracle.",
 });
