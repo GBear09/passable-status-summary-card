@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.0.1";
 
 console.info(
   `%c  PASSABLE-STATUS-SUMMARY-CARD  %c v${CARD_VERSION} `,
@@ -1095,7 +1095,8 @@ if (!customElements.get("status-summary-card-editor")) {
   customElements.define("status-summary-card-editor", StatusSummaryCardEditor);
 }
 if (!customElements.get("passable-status-summary-card-editor")) {
-  customElements.define("passable-status-summary-card-editor", StatusSummaryCardEditor);
+  class PassableStatusSummaryCardEditor extends StatusSummaryCardEditor {}
+  customElements.define("passable-status-summary-card-editor", PassableStatusSummaryCardEditor);
 }
 
 // --- MAIN CARD ---
@@ -2126,11 +2127,12 @@ class StatusSummaryCard extends LitElement {
   }
 }
 
-if (!customElements.get("status-summary-card")) {
-  customElements.define("status-summary-card", StatusSummaryCard);
-}
 if (!customElements.get("passable-status-summary-card")) {
   customElements.define("passable-status-summary-card", StatusSummaryCard);
+}
+if (!customElements.get("status-summary-card")) {
+  class LegacyStatusSummaryCard extends StatusSummaryCard {}
+  customElements.define("status-summary-card", LegacyStatusSummaryCard);
 }
 
 window.customCards = window.customCards || [];

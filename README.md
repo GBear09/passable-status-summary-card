@@ -1,7 +1,7 @@
 # Passable Status Summary Card
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
+[![version](https://img.shields.io/badge/version-v1.0.1-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A flexible, high-performance universal status summary card for Home Assistant Lovelace dashboards. Designed for displaying comprehensive overview information for complex entities such as vehicles, system nodes, smart appliances, network hardware, and environmental sensors.
@@ -42,7 +42,7 @@ A flexible, high-performance universal status summary card for Home Assistant Lo
 2. Upload `passable-status-summary-card.js` into your Home Assistant `/config/www/` directory.
 3. In Home Assistant, navigate to **Settings** -> **Dashboards** -> **Three Dots (top right)** -> **Resources**.
 4. Click **Add Resource** and set:
-   - **Url**: `/local/passable-status-summary-card.js?v=1.0.0`
+   - **Url**: `/local/passable-status-summary-card.js?v=1.0.1`
    - **Resource Type**: `JavaScript Module`
 5. Refresh your browser page.
 
