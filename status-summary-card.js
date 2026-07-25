@@ -1091,7 +1091,12 @@ class StatusSummaryCardEditor extends LitElement {
     `;
   }
 }
-customElements.define("status-summary-card-editor", StatusSummaryCardEditor);
+if (!customElements.get("status-summary-card-editor")) {
+  customElements.define("status-summary-card-editor", StatusSummaryCardEditor);
+}
+if (!customElements.get("passable-status-summary-card-editor")) {
+  customElements.define("passable-status-summary-card-editor", StatusSummaryCardEditor);
+}
 
 // --- MAIN CARD ---
 class StatusSummaryCard extends LitElement {
@@ -1220,7 +1225,7 @@ class StatusSummaryCard extends LitElement {
   }
 
   static getConfigElement() {
-    return document.createElement("status-summary-card-editor");
+    return document.createElement("passable-status-summary-card-editor");
   }
 
   static getStubConfig() {
@@ -2121,12 +2126,17 @@ class StatusSummaryCard extends LitElement {
   }
 }
 
-customElements.define("status-summary-card", StatusSummaryCard);
+if (!customElements.get("status-summary-card")) {
+  customElements.define("status-summary-card", StatusSummaryCard);
+}
+if (!customElements.get("passable-status-summary-card")) {
+  customElements.define("passable-status-summary-card", StatusSummaryCard);
+}
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "status-summary-card",
-  name: "Status Summary Card",
+  type: "passable-status-summary-card",
+  name: "passable-status-summary-card",
   preview: true,
   description: "A universal status summary card with alerts.",
 });

@@ -1,4 +1,4 @@
-# Passable Status Summary Card
+# passable-status-summary-card
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
 [![version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
@@ -32,7 +32,7 @@ A flexible, high-performance universal status summary card for Home Assistant Lo
    https://github.com/GBear09/passable-status-summary-card
    ```
 4. Set the Category to **Dashboard** (or **Lovelace**) and click **Add**.
-5. Find **Passable Status Summary Card** in HACS, click **Download**, and reload your browser dashboard.
+5. Find **passable-status-summary-card** in HACS, click **Download**, and reload your browser dashboard.
 
 ---
 
@@ -53,7 +53,7 @@ A flexible, high-performance universal status summary card for Home Assistant Lo
 ### Basic Vehicle Summary Card
 
 ```yaml
-type: custom:status-summary-card
+type: custom:passable-status-summary-card
 title: Model 3
 icon: mdi:car-electric
 primary_info:
@@ -70,7 +70,7 @@ secondary_info:
 ### Advanced Card with Dynamic Colors, Rings, Alerts & Quick Actions
 
 ```yaml
-type: custom:status-summary-card
+type: custom:passable-status-summary-card
 title: Home Server Status
 icon: mdi:server
 background_image: /local/images/server_rack.jpg
@@ -117,7 +117,7 @@ alerts:
 
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `type` | string | **Required** | Must be `custom:status-summary-card` |
+| `type` | string | **Required** | Must be `custom:passable-status-summary-card` (or `custom:status-summary-card`) |
 | `title` | string | Optional | Custom title for the card |
 | `icon` | string | Optional | Icon displayed in header (overrides state icon) |
 | `image` | string | Optional | Image URL or path to override card icon |
