@@ -38,11 +38,11 @@ A flexible, high-performance universal status summary card for Home Assistant Lo
 
 ### Option 2: Manual Installation
 
-1. Download the [`status-summary-card.js`](status-summary-card.js) file from the latest release.
-2. Upload `status-summary-card.js` into your Home Assistant `/config/www/` directory.
+1. Download the [`passable-status-summary-card.js`](passable-status-summary-card.js) file from the latest release.
+2. Upload `passable-status-summary-card.js` into your Home Assistant `/config/www/` directory.
 3. In Home Assistant, navigate to **Settings** -> **Dashboards** -> **Three Dots (top right)** -> **Resources**.
 4. Click **Add Resource** and set:
-   - **Url**: `/local/status-summary-card.js?v=1.0.0`
+   - **Url**: `/local/passable-status-summary-card.js?v=1.0.0`
    - **Resource Type**: `JavaScript Module`
 5. Refresh your browser page.
 

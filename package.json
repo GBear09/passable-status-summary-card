@@ -2,7 +2,7 @@
   "name": "passable-status-summary-card",
   "version": "1.0.0",
   "description": "A versatile and customizable status summary card for Home Assistant Lovelace dashboards.",
-  "main": "status-summary-card.js",
+  "main": "passable-status-summary-card.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GBear09/passable-status-summary-card.git"
