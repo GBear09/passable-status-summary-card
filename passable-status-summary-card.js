@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.2";
+const CARD_VERSION = "1.0.3";
 
 console.info(
   `%c  PASSABLE-STATUS-SUMMARY-CARD  %c v${CARD_VERSION} `,

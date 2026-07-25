@@ -1,6 +1,6 @@
 {
   "name": "passable-status-summary-card",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "It summarizes entity status and alerts. Don't expect a miracle.",
   "main": "passable-status-summary-card.js",
   "repository": {
