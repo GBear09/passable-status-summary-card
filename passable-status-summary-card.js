@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.4";
+const CARD_VERSION = "1.0.5";
 
 console.info(
   `%c  PASSABLE-STATUS-SUMMARY-CARD  %c v${CARD_VERSION} `,
@@ -1107,10 +1107,13 @@ class StatusSummaryCardEditor extends LitElement {
       }
       .side-by-side {
         display: flex;
-        gap: 16px;
+        gap: 12px;
+        flex-wrap: wrap;
       }
       .side-by-side > * {
-        flex: 1;
+        flex: 1 1 140px;
+        min-width: 0;
+        max-width: 100%;
       }
       p {
         color: var(--secondary-text-color);
