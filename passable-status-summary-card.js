@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.3";
+const CARD_VERSION = "1.0.4";
 
 console.info(
   `%c  PASSABLE-STATUS-SUMMARY-CARD  %c v${CARD_VERSION} `,
@@ -680,6 +680,23 @@ class StatusSummaryCardEditor extends LitElement {
                         ></ha-selector>
 
                         <div class="side-by-side" style="margin-top: 16px;">
+                            <ha-selector
+                                .hass=${this.hass}
+                                .selector=${{ select: { options: colorMapThemeOptions, custom_value: true } }}
+                                .value=${info.color_on || ""}
+                                .label=${"Color (On / Alert State)"}
+                                @value-changed=${(ev) => this._updateSecondaryInfo(index, 'color_on', ev.detail.value)}
+                            ></ha-selector>
+                            <ha-selector
+                                .hass=${this.hass}
+                                .selector=${{ select: { options: colorMapThemeOptions, custom_value: true } }}
+                                .value=${info.color_off || ""}
+                                .label=${"Color (Off / Normal State)"}
+                                @value-changed=${(ev) => this._updateSecondaryInfo(index, 'color_off', ev.detail.value)}
+                            ></ha-selector>
+                        </div>
+
+                        <div class="side-by-side" style="margin-top: 16px;">
                             <ha-formfield .label=${"Show Value as a Gauge"}>
                                 <ha-switch
                                     .checked=${info.show_gauge || false}
@@ -956,6 +973,17 @@ class StatusSummaryCardEditor extends LitElement {
         ${renderSectionHeader('alerts', 'Alerts & Conditional Notifications', html`<ha-button @click=${(ev) => { ev.stopPropagation(); this._addAlert(ev); }}>Add Alert</ha-button>`)}
         <div style="display: ${this._expandedSections.alerts ? 'block' : 'none'};">
             <p><i>Display notification icons and override secondary rings when a specific entity matches a state.</i></p>
+
+            <ha-formfield .label=${"Show Alert Icons in Card Header"} style="margin-bottom: 16px;">
+                <ha-switch
+                    .checked=${this.config.show_header_alerts !== false}
+                    @change=${(ev) => {
+                    this.config = { ...this.config, show_header_alerts: ev.target.checked };
+                    this._fireConfigChange();
+                    }}
+                ></ha-switch>
+            </ha-formfield>
+
             <div class="list-editor">
                 ${(this.config.alerts || []).map((alert, index) => {
                 const isExpanded = (this._expandedAlerts || {})[index];
@@ -1632,11 +1660,11 @@ class StatusSummaryCard extends LitElement {
                   `;
                 }) : ''}
                 
-                ${activeAlerts.map(alert => html`
+                ${(this.config.show_header_alerts !== false) ? activeAlerts.map(alert => html`
                   <div class="alert-indicator clickable-item" style="background-color: ${alert.color || 'var(--error-color)'};" title="${alert.entity}" @click=${(ev) => this._handleAlertClick(ev, alert)}>
                     <ha-icon icon="${alert.icon || 'mdi:alert'}"></ha-icon>
                   </div>
-                `)}
+                `) : ''}
               </div>
 
               ${showGauge ? html`
@@ -1693,23 +1721,54 @@ class StatusSummaryCard extends LitElement {
                 
                 let itemColor = 'var(--primary-text-color)';
                 
-                if (stateObj && info.entity.startsWith('light.')) {
-                    if (stateObj.state === 'on') {
-                        if (stateObj.attributes.rgb_color) {
-                            const [r, g, b] = stateObj.attributes.rgb_color;
-                            itemColor = `rgb(${r}, ${g}, ${b})`;
-                        } else {
-                            itemColor = 'var(--state-light-active-color, var(--state-active-color, #ffc107))';
+                if (stateObj) {
+                    const stateStr = String(stateVal).toLowerCase();
+                    const isOn = ['on', 'home', 'active', 'playing', 'open', 'unlocked', 'true'].includes(stateStr);
+
+                    // 1. Explicit per-item color overrides
+                    if (isOn && info.color_on) {
+                        itemColor = info.color_on;
+                    } else if (!isOn && info.color_off) {
+                        itemColor = info.color_off;
+                    } else if (info.color) {
+                        itemColor = info.color;
+                    }
+                    // 2. Light entity RGB / Brightness logic
+                    else if (info.entity.startsWith('light.')) {
+                        if (stateObj.state === 'on') {
+                            if (stateObj.attributes.rgb_color) {
+                                const [r, g, b] = stateObj.attributes.rgb_color;
+                                itemColor = `rgb(${r}, ${g}, ${b})`;
+                            } else {
+                                itemColor = 'var(--state-light-active-color, var(--state-active-color, #ffc107))';
+                            }
                         }
                     }
-                } else if (stateObj) {
-                    itemColor = colorPalette[paletteIndex % colorPalette.length];
-                    paletteIndex++;
-                }
-
-                const itemAlert = activeAlerts.find(a => a.entity === info.entity);
-                if (itemAlert && itemAlert.color) {
-                    itemColor = itemAlert.color;
+                    // 3. Smart Binary / Status Auto-Coloring
+                    else if (
+                        info.entity.startsWith('binary_sensor.') || 
+                        info.entity.startsWith('lock.') || 
+                        info.entity.startsWith('cover.') || 
+                        info.entity.startsWith('switch.') || 
+                        ['on', 'off', 'home', 'not_home', 'open', 'closed', 'locked', 'unlocked'].includes(stateStr)
+                    ) {
+                        const isBattery = info.entity.includes('battery') || (stateObj.attributes && stateObj.attributes.device_class === 'battery');
+                        if (isOn) {
+                            itemColor = isBattery ? 'var(--warning-color, #f39c12)' : 'var(--error-color, #e74c3c)';
+                        } else {
+                            itemColor = 'var(--success-color, #2ecc71)';
+                        }
+                    }
+                    // 4. Alert fallback for backwards compatibility
+                    else {
+                        const itemAlert = activeAlerts.find(a => a.entity === info.entity);
+                        if (itemAlert && itemAlert.color) {
+                            itemColor = itemAlert.color;
+                        } else {
+                            itemColor = colorPalette[paletteIndex % colorPalette.length];
+                            paletteIndex++;
+                        }
+                    }
                 }
 
                 if (info.show_gauge) {
