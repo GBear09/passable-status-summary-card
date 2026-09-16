@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.5";
+const CARD_VERSION = "1.0.6";
 
 console.info(
   `%c  PASSABLE-STATUS-SUMMARY-CARD  %c v${CARD_VERSION} `,
@@ -182,6 +182,8 @@ class StatusSummaryCardEditor extends LitElement {
     // If it's a string currently, convert to object
     if (typeof newIcons[index] === 'string') {
         newIcons[index] = { entity: newIcons[index] };
+    } else {
+        newIcons[index] = { ...newIcons[index] };
     }
     
     if (value === undefined || value === "") {
@@ -824,6 +826,40 @@ class StatusSummaryCardEditor extends LitElement {
                                     @value-changed=${(ev) => this._updateStatusIcon(index, 'icon_color_off', ev.detail.value)}
                                 ></ha-selector>
                             </div>
+
+                            <div class="side-by-side" style="margin-top: 16px;">
+                                <ha-selector
+                                    .hass=${this.hass}
+                                    .selector=${{ select: { options: colorMapThemeOptions, custom_value: true } }}
+                                    .value=${isString ? "" : (iconObj.bg_color_on || "")}
+                                    .label=${"Background Color (On State)"}
+                                    @value-changed=${(ev) => this._updateStatusIcon(index, 'bg_color_on', ev.detail.value)}
+                                ></ha-selector>
+                                <ha-selector
+                                    .hass=${this.hass}
+                                    .selector=${{ select: { options: colorMapThemeOptions, custom_value: true } }}
+                                    .value=${isString ? "" : (iconObj.bg_color_off || "")}
+                                    .label=${"Background Color (Off State)"}
+                                    @value-changed=${(ev) => this._updateStatusIcon(index, 'bg_color_off', ev.detail.value)}
+                                ></ha-selector>
+                            </div>
+
+                            <ha-selector
+                                .hass=${this.hass}
+                                .selector=${{ ui_action: {} }}
+                                .value=${isString ? { action: "more-info" } : (iconObj.tap_action || { action: "more-info" })}
+                                .label=${"Tap Action"}
+                                @value-changed=${(ev) => this._updateStatusIcon(index, 'tap_action', ev.detail.value)}
+                                style="margin-top: 16px;"
+                            ></ha-selector>
+                            <ha-selector
+                                .hass=${this.hass}
+                                .selector=${{ ui_action: {} }}
+                                .value=${isString ? { action: "none" } : (iconObj.hold_action || { action: "none" })}
+                                .label=${"Hold Action"}
+                                @value-changed=${(ev) => this._updateStatusIcon(index, 'hold_action', ev.detail.value)}
+                                style="margin-top: 16px;"
+                            ></ha-selector>
                         </div>
                     </div>
                 `;
@@ -1309,17 +1345,24 @@ class StatusSummaryCard extends LitElement {
     this._executeActionConfig(actionConfig);
   }
 
-  _executeActionConfig(actionConfig) {
+  _executeActionConfig(actionConfig, defaultEntityId) {
     if (!actionConfig) return;
-    const entityId = this.config.primary_info?.entity;
+    const fallbackEntityId = defaultEntityId || this.config.primary_info?.entity;
 
     if (actionConfig.action === "fire-dom-event") {
       const event = new Event("ll-custom", { bubbles: true, composed: true, cancelable: false });
       event.detail = actionConfig;
       this.dispatchEvent(event);
-    } else if (actionConfig.action === "call-service") {
-      const [domain, service] = actionConfig.service.split(".");
-      this.hass.callService(domain, service, actionConfig.data || {});
+    } else if (actionConfig.action === "call-service" || actionConfig.action === "perform-action") {
+      const serviceString = actionConfig.perform_action || actionConfig.service || "";
+      if (serviceString.includes(".")) {
+        const [domain, service] = serviceString.split(".");
+        const serviceData = { ...(actionConfig.data || {}), ...(actionConfig.target || {}) };
+        if (fallbackEntityId && !serviceData.entity_id && !actionConfig.target) {
+          serviceData.entity_id = fallbackEntityId;
+        }
+        this.hass.callService(domain, service, serviceData);
+      }
     } else if (actionConfig.action === "navigate") {
       window.history.pushState(null, "", actionConfig.navigation_path);
       const event = new Event("location-changed", { bubbles: true, composed: true });
@@ -1327,33 +1370,87 @@ class StatusSummaryCard extends LitElement {
     } else if (actionConfig.action === "url") {
       window.open(actionConfig.url_path, "_blank");
     } else if (actionConfig.action === "more-info") {
-      const targetEntity = actionConfig.entity || entityId;
+      const targetEntity = actionConfig.entity || fallbackEntityId;
       if (targetEntity) {
         const event = new Event("hass-more-info", { bubbles: true, composed: true });
         event.detail = { entityId: targetEntity };
         this.dispatchEvent(event);
+      }
+    } else if (actionConfig.action === "toggle") {
+      const targetEntity = actionConfig.entity || fallbackEntityId;
+      if (targetEntity) {
+        const domain = targetEntity.split(".")[0];
+        this.hass.callService(domain, "toggle", { entity_id: targetEntity });
       }
     }
   }
 
   _handleQuickActionStart(ev) {
     ev.stopPropagation();
+    if (ev.type === 'touchstart') {
+      this._lastQuickTouch = Date.now();
+    } else if (ev.type === 'mousedown' && this._lastQuickTouch && Date.now() - this._lastQuickTouch < 800) {
+      return;
+    }
     this._quickActionTimer = Date.now();
   }
 
   _handleQuickActionEnd(ev, action) {
     ev.stopPropagation();
+    if (ev.type === 'touchend') {
+      this._lastQuickTouch = Date.now();
+    } else if (ev.type === 'mouseup' && this._lastQuickTouch && Date.now() - this._lastQuickTouch < 800) {
+      return;
+    }
     if (!this._quickActionTimer) return;
     const duration = Date.now() - this._quickActionTimer;
     this._quickActionTimer = null;
     
     if (duration > 400) {
       if (action.hold_action && action.hold_action.action !== "none") {
-        this._executeActionConfig(action.hold_action);
+        this._executeActionConfig(action.hold_action, action.entity);
       }
     } else {
       if (action.tap_action && action.tap_action.action !== "none") {
-        this._executeActionConfig(action.tap_action);
+        this._executeActionConfig(action.tap_action, action.entity);
+      }
+    }
+  }
+
+  _handleStatusIconStart(ev) {
+    ev.stopPropagation();
+    if (ev.type === 'touchstart') {
+      this._lastStatusTouch = Date.now();
+    } else if (ev.type === 'mousedown' && this._lastStatusTouch && Date.now() - this._lastStatusTouch < 800) {
+      return;
+    }
+    this._statusIconTimer = Date.now();
+  }
+
+  _handleStatusIconEnd(ev, iconObj) {
+    ev.stopPropagation();
+    if (ev.type === 'touchend') {
+      this._lastStatusTouch = Date.now();
+    } else if (ev.type === 'mouseup' && this._lastStatusTouch && Date.now() - this._lastStatusTouch < 800) {
+      return;
+    }
+    if (!this._statusIconTimer) return;
+    const duration = Date.now() - this._statusIconTimer;
+    this._statusIconTimer = null;
+
+    const isString = typeof iconObj === 'string';
+    const entityId = isString ? iconObj : iconObj.entity;
+
+    if (duration > 400) {
+      // Option A: Only execute hold_action if explicitly configured and not "none"
+      if (!isString && iconObj.hold_action && iconObj.hold_action.action && iconObj.hold_action.action !== "none") {
+        this._executeActionConfig(iconObj.hold_action, entityId);
+      }
+    } else {
+      // Tap action: default to { action: "more-info" } for entityId if unset
+      const tapAction = (!isString && iconObj.tap_action) ? iconObj.tap_action : { action: "more-info", entity: entityId };
+      if (tapAction && tapAction.action && tapAction.action !== "none") {
+        this._executeActionConfig(tapAction, entityId);
       }
     }
   }
@@ -1606,6 +1703,7 @@ class StatusSummaryCard extends LitElement {
                              @mouseup=${(ev) => this._handleQuickActionEnd(ev, action)}
                              @touchstart=${this._handleQuickActionStart}
                              @touchend=${(ev) => this._handleQuickActionEnd(ev, action)}
+                             @touchcancel=${() => { this._quickActionTimer = null; }}
                              @click=${(ev) => ev.stopPropagation()}
                              title="${action.name || ''}"
                              style="${bgStyle}">
@@ -1651,7 +1749,14 @@ class StatusSummaryCard extends LitElement {
                   const styleStr = (iconColor ? `color: ${iconColor}; ` : '') + (bgColor ? `background-color: ${bgColor}; padding: 4px; border-radius: 50%; ` : '');
                   
                   return html`
-                    <div class="status-icon-indicator clickable-item" title="${stateObj.attributes.friendly_name || entityId}: ${stateObj.state}" @click=${(ev) => this._handleEntityClick(ev, entityId)}>
+                    <div class="status-icon-indicator clickable-item" 
+                         title="${stateObj.attributes.friendly_name || entityId}: ${stateObj.state}"
+                         @mousedown=${this._handleStatusIconStart}
+                         @mouseup=${(ev) => this._handleStatusIconEnd(ev, iconObj)}
+                         @touchstart=${this._handleStatusIconStart}
+                         @touchend=${(ev) => this._handleStatusIconEnd(ev, iconObj)}
+                         @touchcancel=${() => { this._statusIconTimer = null; }}
+                         @click=${(ev) => ev.stopPropagation()}>
                       ${customIcon 
                         ? html`<ha-icon icon="${customIcon}" style="${styleStr}"></ha-icon>`
                         : (stateObj.attributes.entity_picture

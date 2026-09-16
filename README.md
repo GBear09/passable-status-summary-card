@@ -1,7 +1,7 @@
 # Passable Status Summary Card
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![version](https://img.shields.io/badge/version-v1.0.5-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
+[![version](https://img.shields.io/badge/version-v1.0.6-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A flexible, high-performance universal status summary card for Home Assistant Lovelace dashboards. Designed for displaying comprehensive overview information for complex entities such as vehicles, system nodes, smart appliances, network hardware, and environmental sensors.
@@ -97,6 +97,20 @@ secondary_info:
     show_ring: true
     min_value: 0
     max_value: 100
+status_icons:
+  - entity: device_tracker.hudson_tracker
+    tap_action:
+      action: fire-dom-event
+      browser_mod:
+        service: browser_mod.popup
+        data:
+          title: Hudson
+          adaptive: true
+          content:
+            type: custom:passable-pet-card
+            entity: device_tracker.hudson_tracker
+    hold_action:
+      action: none
 quick_actions:
   - icon: mdi:restart
     tap_action:
@@ -125,6 +139,8 @@ alerts:
 | `color_map` | list | Optional | Dynamic card background colors mapped to states |
 | `primary_info` | object | Optional | Primary entity, attribute selection, and extra info |
 | `secondary_info` | list | Optional | Array of secondary info items and optional progress rings |
+| `status_icons` | list | Optional | Array of status entities (string or object with `tap_action`, `hold_action`, custom icons/colors) |
+| `status_icons_active_only` | boolean | `false` | Only show status icons when active (`on`, `home`, etc.) |
 | `quick_actions` | list | Optional | List of interactive quick action buttons |
 | `alerts` | list | Optional | List of warning icons/indicators triggered by states |
 
