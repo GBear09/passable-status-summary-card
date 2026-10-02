@@ -1665,10 +1665,10 @@ class StatusSummaryCard extends LitElement {
           <div class="header">
             <div class="header-left">
               <h1 class="title">
-                ${this.config.image
-                    ? html`<img class="main-image" src="${this.config.image}" alt="${primaryName}" style="margin-right: 8px;" />`
-                    : (this.config.icon 
-                        ? html`<ha-icon class="title-icon" icon="${this.config.icon}" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>` 
+                ${this.config.icon 
+                    ? html`<ha-icon class="title-icon" icon="${this.config.icon}" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>` 
+                    : (this.config.image
+                        ? html`<img class="main-image" src="${this.config.image}" alt="${primaryName}" style="margin-right: 8px;" />`
                         : (primaryStateObj 
                             ? html`<ha-icon class="title-icon" icon="mdi:chart-box" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>`
                             : html`<ha-icon class="title-icon" icon="mdi:information-outline" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>`
