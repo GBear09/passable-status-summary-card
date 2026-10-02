@@ -3,12 +3,12 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.6";
+const CARD_VERSION = "1.0.7";
 
 console.info(
-  `%c  PASSABLE-STATUS-SUMMARY-CARD  %c v${CARD_VERSION} `,
-  "color: white; font-weight: bold; background: #3498db; padding: 2px 5px; border-radius: 3px 0 0 3px;",
-  "color: #3498db; font-weight: bold; background: #ecf0f1; padding: 2px 5px; border-radius: 0 3px 3px 0;"
+  `%c PASSABLE-STATUS-SUMMARY-CARD %c v${CARD_VERSION} IS LOADED `,
+  "color: white; background: #0284c7; font-weight: bold; padding: 2px 6px; border-radius: 4px 0 0 4px;",
+  "color: #0284c7; background: #e0f2fe; font-weight: bold; padding: 2px 6px; border-radius: 0 4px 4px 0;"
 );
 
 const LitElement = Object.getPrototypeOf(
@@ -1176,6 +1176,10 @@ class StatusSummaryCard extends LitElement {
     };
   }
 
+  static getConfigElement() {
+    return document.createElement("passable-status-summary-card-editor");
+  }
+
   constructor() {
     super();
     this._history = [];
@@ -1658,65 +1662,70 @@ class StatusSummaryCard extends LitElement {
           : ''}
           
         <div class="card-content">
-          <div class="top-row">
-            <div class="header">
-              ${this.config.image
-                  ? html`<img class="main-image" src="${this.config.image}" alt="${primaryName}" />`
-                  : (this.config.icon 
-                      ? html`<ha-icon class="main-icon" icon="${this.config.icon}"></ha-icon>` 
-                      : (primaryStateObj ? html`<ha-state-icon class="main-icon" .hass=${this.hass} .stateObj=${primaryStateObj}></ha-state-icon>` : '')
-                  )
-              }
-              <div class="title-container" style="display: flex; flex-direction: column; justify-content: center; gap: 4px;">
-                <div class="title">${this.config.title || 'Summary'}</div>
-                ${this.config.quick_actions && this.config.quick_actions.length > 0 ? html`
-                  <div class="quick-actions-row">
-                    ${this.config.quick_actions.map(action => {
-                      if (action.visible_users && action.visible_users.length > 0) {
-                          if (!this.hass.user || !action.visible_users.includes(this.hass.user.id)) {
-                              return '';
-                          }
-                      }
+          <div class="header">
+            <div class="header-left">
+              <h1 class="title">
+                ${this.config.image
+                    ? html`<img class="main-image" src="${this.config.image}" alt="${primaryName}" style="margin-right: 8px;" />`
+                    : (this.config.icon 
+                        ? html`<ha-icon class="title-icon" icon="${this.config.icon}" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>` 
+                        : (primaryStateObj 
+                            ? html`<ha-icon class="title-icon" icon="mdi:chart-box" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>`
+                            : html`<ha-icon class="title-icon" icon="mdi:information-outline" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>`
+                          )
+                      )
+                }
+                ${this.config.title || 'Summary'}
+              </h1>
+              <p class="subtitle">${this.config.subtitle || (primaryName ? `${primaryName} Overview` : 'System & Entity Overview')}</p>
+              ${this.config.quick_actions && this.config.quick_actions.length > 0 ? html`
+                <div class="quick-actions-row">
+                  ${this.config.quick_actions.map(action => {
+                    if (action.visible_users && action.visible_users.length > 0) {
+                        if (!this.hass.user || !action.visible_users.includes(this.hass.user.id)) {
+                            return '';
+                        }
+                    }
 
-                      let actionIcon = action.icon || '';
-                      let bgStyle = '';
-                      let iconStyle = '';
-                      
-                      if (action.entity && this.hass.states[action.entity]) {
-                          const stateObj = this.hass.states[action.entity];
-                          const isOn = ['on', 'home', 'active', 'playing', 'open', 'unlocked', 'true'].includes(String(stateObj.state).toLowerCase());
-                          
-                          if (isOn) {
-                              if (action.icon_on) actionIcon = action.icon_on;
-                              if (action.bg_color_on) bgStyle = `background-color: ${action.bg_color_on};`;
-                              if (action.icon_color_on) iconStyle = `color: ${action.icon_color_on};`;
-                          } else {
-                              if (action.icon_off) actionIcon = action.icon_off;
-                              if (action.bg_color_off) bgStyle = `background-color: ${action.bg_color_off};`;
-                              if (action.icon_color_off) iconStyle = `color: ${action.icon_color_off};`;
-                          }
-                      }
-                      
-                      return html`
-                        <div class="quick-action-btn" 
-                             @mousedown=${this._handleQuickActionStart}
-                             @mouseup=${(ev) => this._handleQuickActionEnd(ev, action)}
-                             @touchstart=${this._handleQuickActionStart}
-                             @touchend=${(ev) => this._handleQuickActionEnd(ev, action)}
-                             @touchcancel=${() => { this._quickActionTimer = null; }}
-                             @click=${(ev) => ev.stopPropagation()}
-                             title="${action.name || ''}"
-                             style="${bgStyle}">
-                          ${actionIcon ? html`<ha-icon icon="${actionIcon}" style="${iconStyle}"></ha-icon>` : ''}
-                        </div>
-                      `;
-                    })}
-                  </div>
-                ` : ''}
-              </div>
+                    let actionIcon = action.icon || '';
+                    let bgStyle = '';
+                    let iconStyle = '';
+                    
+                    if (action.entity && this.hass.states[action.entity]) {
+                        const stateObj = this.hass.states[action.entity];
+                        const isOn = ['on', 'home', 'active', 'playing', 'open', 'unlocked', 'true'].includes(String(stateObj.state).toLowerCase());
+                        
+                        if (isOn) {
+                            if (action.icon_on) actionIcon = action.icon_on;
+                            if (action.bg_color_on) bgStyle = `background-color: ${action.bg_color_on};`;
+                            if (action.icon_color_on) iconStyle = `color: ${action.icon_color_on};`;
+                        } else {
+                            if (action.icon_off) actionIcon = action.icon_off;
+                            if (action.bg_color_off) bgStyle = `background-color: ${action.bg_color_off};`;
+                            if (action.icon_color_off) iconStyle = `color: ${action.icon_color_off};`;
+                        }
+                    }
+                    
+                    return html`
+                      <div class="quick-action-btn" 
+                           @mousedown=${this._handleQuickActionStart}
+                           @mouseup=${(ev) => this._handleQuickActionEnd(ev, action)}
+                           @touchstart=${this._handleQuickActionStart}
+                           @touchend=${(ev) => this._handleQuickActionEnd(ev, action)}
+                           @touchcancel=${() => { this._quickActionTimer = null; }}
+                           @click=${(ev) => ev.stopPropagation()}
+                           title="${action.name || ''}"
+                           style="${bgStyle}">
+                        ${actionIcon ? html`<ha-icon icon="${actionIcon}" style="${iconStyle}"></ha-icon>` : ''}
+                      </div>
+                    `;
+                  })}
+                </div>
+              ` : ''}
             </div>
             
-            <div class="primary-info">
+            <div class="header-right">
+              <div class="primary-info">
               <div class="alerts-container">
                 ${this.config.status_icons ? this.config.status_icons.map(iconObj => {
                   const isString = typeof iconObj === 'string';
@@ -1792,6 +1801,7 @@ class StatusSummaryCard extends LitElement {
                   ${this._renderExtraInfo(primaryStateObj, this.config.primary_info?.extra_info)}
                 </div>
               `}
+              </div>
             </div>
           </div>
           
@@ -1979,13 +1989,13 @@ class StatusSummaryCard extends LitElement {
       ha-card {
         cursor: pointer;
         overflow: hidden;
-        transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        border-radius: var(--ha-card-border-radius, 12px);
+        transition: box-shadow 0.15s ease-in-out;
         position: relative;
         background: var(--ha-card-background, var(--card-background-color, white));
       }
       ha-card:hover {
-        transform: scale(1.02);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       }
       .card-background-overlay {
         position: absolute;
@@ -2023,16 +2033,50 @@ class StatusSummaryCard extends LitElement {
         position: relative;
         z-index: 1;
       }
-      .top-row {
+      .header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        border-bottom: 1px solid var(--divider-color, #e0e0e0);
+        padding-bottom: 16px;
+        margin-bottom: 16px;
       }
-      .header {
+      .header-left {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+      }
+      .title {
+        font-size: 24px;
+        font-weight: 500;
+        margin: 0;
+        letter-spacing: -0.01em;
         display: flex;
         align-items: center;
-        gap: 12px;
-        flex: 1;
+        color: var(--primary-text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .title-icon {
+        --mdc-icon-size: 24px;
+        flex-shrink: 0;
+      }
+      .subtitle {
+        color: var(--secondary-text-color, #757575);
+        font-size: 14px;
+        margin: 0;
+        margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .header-right {
+        display: flex;
+        align-items: flex-start;
+        flex-shrink: 0;
+        margin-left: 12px;
       }
       .main-icon {
         color: var(--state-icon-color, var(--primary-text-color));
@@ -2044,11 +2088,6 @@ class StatusSummaryCard extends LitElement {
         max-width: 120px;
         object-fit: contain;
         border-radius: 4px;
-      }
-      .title {
-        font-size: 1.1em;
-        font-weight: 500;
-        color: var(--primary-text-color);
       }
       .quick-actions-row {
         display: flex;
@@ -2294,6 +2333,14 @@ class StatusSummaryCard extends LitElement {
   }
 }
 
+if (!customElements.get("passable-status-summary-card-editor")) {
+  customElements.define("passable-status-summary-card-editor", StatusSummaryCardEditor);
+}
+if (!customElements.get("status-summary-card-editor")) {
+  class LegacyStatusSummaryCardEditor extends StatusSummaryCardEditor {}
+  customElements.define("status-summary-card-editor", LegacyStatusSummaryCardEditor);
+}
+
 if (!customElements.get("passable-status-summary-card")) {
   customElements.define("passable-status-summary-card", StatusSummaryCard);
 }
@@ -2307,5 +2354,6 @@ window.customCards.push({
   type: "passable-status-summary-card",
   name: "Passable Status Summary Card",
   preview: true,
-  description: "It summarizes entity status and alerts. Don't expect a miracle.",
+  documentationURL: "https://github.com/GBear09/passable-status-summary-card",
+  description: "Universal status summary card featuring multi-entity status icons, quick actions, metric gauges, and dynamic alerts.",
 });
