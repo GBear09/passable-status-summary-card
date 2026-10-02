@@ -1,7 +1,7 @@
 # Passable Status Summary Card
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![version](https://img.shields.io/badge/version-v1.0.7-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
+[![version](https://img.shields.io/badge/version-v1.0.8-blue.svg)](https://github.com/GBear09/passable-status-summary-card/releases)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A flexible, high-performance universal status summary card for Home Assistant Lovelace dashboards. Designed for displaying comprehensive overview information for complex entities such as vehicles, system nodes, smart appliances, network hardware, and environmental sensors.

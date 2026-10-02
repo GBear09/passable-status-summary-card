@@ -5,6 +5,13 @@ All notable changes to **Passable Status Summary Card** will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2026-10-02
+
+### Changed
+- **Compact Layout Restored**: Restored compact `.top-row` layout and tightened `.card-content` padding (12px 14px) for optimal dashboard density.
+- **Removed Forced Subtitles & Dividers**: Removed automatic fallback subtitle generation ("... Overview") and divider line, displaying subtitle only when explicitly configured by the user.
+- **Fixed Top-Right Metric Collision**: Added guaranteed spacing (`gap: 12px; margin-right: 8px; min-width: 130px;`) between status metric labels and values (e.g., "Battery" and "70%").
+
 ## [1.0.7] - 2026-10-02
 
 ### Changed

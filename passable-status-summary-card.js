@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.7";
+const CARD_VERSION = "1.0.8";
 
 console.info(
   `%c PASSABLE-STATUS-SUMMARY-CARD %c v${CARD_VERSION} IS LOADED `,
@@ -1662,70 +1662,66 @@ class StatusSummaryCard extends LitElement {
           : ''}
           
         <div class="card-content">
-          <div class="header">
-            <div class="header-left">
-              <h1 class="title">
-                ${this.config.icon 
-                    ? html`<ha-icon class="title-icon" icon="${this.config.icon}" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>` 
-                    : (this.config.image
-                        ? html`<img class="main-image" src="${this.config.image}" alt="${primaryName}" style="margin-right: 8px;" />`
-                        : (primaryStateObj 
-                            ? html`<ha-icon class="title-icon" icon="mdi:chart-box" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>`
-                            : html`<ha-icon class="title-icon" icon="mdi:information-outline" style="margin-right: 8px; color: var(--primary-color);"></ha-icon>`
-                          )
-                      )
-                }
-                ${this.config.title || 'Summary'}
-              </h1>
-              <p class="subtitle">${this.config.subtitle || (primaryName ? `${primaryName} Overview` : 'System & Entity Overview')}</p>
-              ${this.config.quick_actions && this.config.quick_actions.length > 0 ? html`
-                <div class="quick-actions-row">
-                  ${this.config.quick_actions.map(action => {
-                    if (action.visible_users && action.visible_users.length > 0) {
-                        if (!this.hass.user || !action.visible_users.includes(this.hass.user.id)) {
-                            return '';
-                        }
-                    }
+          <div class="top-row">
+            <div class="header">
+              ${this.config.image
+                  ? html`<img class="main-image" src="${this.config.image}" alt="${primaryName}" />`
+                  : (this.config.icon 
+                      ? html`<ha-icon class="main-icon title-icon" icon="${this.config.icon}"></ha-icon>` 
+                      : (primaryStateObj ? html`<ha-state-icon class="main-icon title-icon" .hass=${this.hass} .stateObj=${primaryStateObj}></ha-state-icon>` : '')
+                  )
+              }
+              <div class="title-container" style="display: flex; flex-direction: column; justify-content: center; gap: 2px;">
+                <div class="title">${this.config.title || 'Summary'}</div>
+                ${this.config.subtitle ? html`<div class="subtitle">${this.config.subtitle}</div>` : ''}
+                ${this.config.quick_actions && this.config.quick_actions.length > 0 ? html`
+                  <div class="quick-actions-row">
+                    ${this.config.quick_actions.map(action => {
+                      if (action.visible_users && action.visible_users.length > 0) {
+                          if (!this.hass.user || !action.visible_users.includes(this.hass.user.id)) {
+                              return '';
+                          }
+                      }
 
-                    let actionIcon = action.icon || '';
-                    let bgStyle = '';
-                    let iconStyle = '';
-                    
-                    if (action.entity && this.hass.states[action.entity]) {
-                        const stateObj = this.hass.states[action.entity];
-                        const isOn = ['on', 'home', 'active', 'playing', 'open', 'unlocked', 'true'].includes(String(stateObj.state).toLowerCase());
-                        
-                        if (isOn) {
-                            if (action.icon_on) actionIcon = action.icon_on;
-                            if (action.bg_color_on) bgStyle = `background-color: ${action.bg_color_on};`;
-                            if (action.icon_color_on) iconStyle = `color: ${action.icon_color_on};`;
-                        } else {
-                            if (action.icon_off) actionIcon = action.icon_off;
-                            if (action.bg_color_off) bgStyle = `background-color: ${action.bg_color_off};`;
-                            if (action.icon_color_off) iconStyle = `color: ${action.icon_color_off};`;
-                        }
-                    }
-                    
-                    return html`
-                      <div class="quick-action-btn" 
-                           @mousedown=${this._handleQuickActionStart}
-                           @mouseup=${(ev) => this._handleQuickActionEnd(ev, action)}
-                           @touchstart=${this._handleQuickActionStart}
-                           @touchend=${(ev) => this._handleQuickActionEnd(ev, action)}
-                           @touchcancel=${() => { this._quickActionTimer = null; }}
-                           @click=${(ev) => ev.stopPropagation()}
-                           title="${action.name || ''}"
-                           style="${bgStyle}">
-                        ${actionIcon ? html`<ha-icon icon="${actionIcon}" style="${iconStyle}"></ha-icon>` : ''}
-                      </div>
-                    `;
-                  })}
-                </div>
-              ` : ''}
+                      let actionIcon = action.icon || '';
+                      let bgStyle = '';
+                      let iconStyle = '';
+                      
+                      if (action.entity && this.hass.states[action.entity]) {
+                          const stateObj = this.hass.states[action.entity];
+                          const isOn = ['on', 'home', 'active', 'playing', 'open', 'unlocked', 'true'].includes(String(stateObj.state).toLowerCase());
+                          
+                          if (isOn) {
+                              if (action.icon_on) actionIcon = action.icon_on;
+                              if (action.bg_color_on) bgStyle = `background-color: ${action.bg_color_on};`;
+                              if (action.icon_color_on) iconStyle = `color: ${action.icon_color_on};`;
+                          } else {
+                              if (action.icon_off) actionIcon = action.icon_off;
+                              if (action.bg_color_off) bgStyle = `background-color: ${action.bg_color_off};`;
+                              if (action.icon_color_off) iconStyle = `color: ${action.icon_color_off};`;
+                          }
+                      }
+                      
+                      return html`
+                        <div class="quick-action-btn" 
+                             @mousedown=${this._handleQuickActionStart}
+                             @mouseup=${(ev) => this._handleQuickActionEnd(ev, action)}
+                             @touchstart=${this._handleQuickActionStart}
+                             @touchend=${(ev) => this._handleQuickActionEnd(ev, action)}
+                             @touchcancel=${() => { this._quickActionTimer = null; }}
+                             @click=${(ev) => ev.stopPropagation()}
+                             title="${action.name || ''}"
+                             style="${bgStyle}">
+                          ${actionIcon ? html`<ha-icon icon="${actionIcon}" style="${iconStyle}"></ha-icon>` : ''}
+                        </div>
+                      `;
+                    })}
+                  </div>
+                ` : ''}
+              </div>
             </div>
             
-            <div class="header-right">
-              <div class="primary-info">
+            <div class="primary-info">
               <div class="alerts-container">
                 ${this.config.status_icons ? this.config.status_icons.map(iconObj => {
                   const isString = typeof iconObj === 'string';
@@ -1801,7 +1797,6 @@ class StatusSummaryCard extends LitElement {
                   ${this._renderExtraInfo(primaryStateObj, this.config.primary_info?.extra_info)}
                 </div>
               `}
-              </div>
             </div>
           </div>
           
@@ -2029,78 +2024,68 @@ class StatusSummaryCard extends LitElement {
         height: 100%;
       }
       .card-content {
-        padding: 16px;
+        padding: 12px 14px;
         position: relative;
         z-index: 1;
       }
-      .header {
+      .top-row {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        border-bottom: 1px solid var(--divider-color, #e0e0e0);
-        padding-bottom: 16px;
-        margin-bottom: 16px;
+        gap: 12px;
       }
-      .header-left {
+      .header {
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        gap: 10px;
         flex: 1;
         min-width: 0;
       }
       .title {
-        font-size: 24px;
-        font-weight: 500;
+        font-size: 1.15em;
+        font-weight: 600;
         margin: 0;
-        letter-spacing: -0.01em;
-        display: flex;
-        align-items: center;
+        line-height: 1.2;
         color: var(--primary-text-color);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .title-icon {
-        --mdc-icon-size: 24px;
+      .title-icon, .main-icon {
+        color: var(--state-icon-color, var(--primary-text-color));
+        width: 32px;
+        height: 32px;
+        --mdc-icon-size: 32px;
         flex-shrink: 0;
       }
       .subtitle {
         color: var(--secondary-text-color, #757575);
-        font-size: 14px;
+        font-size: 0.85em;
         margin: 0;
-        margin-top: 4px;
+        margin-top: 2px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .header-right {
-        display: flex;
-        align-items: flex-start;
-        flex-shrink: 0;
-        margin-left: 12px;
-      }
-      .main-icon {
-        color: var(--state-icon-color, var(--primary-text-color));
-        width: 32px;
-        height: 32px;
-      }
       .main-image {
-        max-height: 48px;
-        max-width: 120px;
+        max-height: 44px;
+        max-width: 110px;
         object-fit: contain;
         border-radius: 4px;
+        flex-shrink: 0;
       }
       .quick-actions-row {
         display: flex;
         flex-direction: row;
         gap: 8px;
-        margin-top: 2px;
+        margin-top: 4px;
       }
       .quick-action-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         background-color: var(--secondary-background-color, rgba(120, 120, 120, 0.2));
         color: var(--primary-text-color);
@@ -2112,26 +2097,29 @@ class StatusSummaryCard extends LitElement {
         opacity: 0.9;
       }
       .quick-action-btn ha-icon {
-        --mdc-icon-size: 18px;
+        --mdc-icon-size: 16px;
       }
       .primary-info {
         text-align: right;
-        flex: 1;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
         justify-content: flex-start;
+        flex-shrink: 0;
+        min-width: 0;
       }
       .primary-value {
-        font-size: 2em;
+        font-size: 1.8em;
         font-weight: 600;
-        line-height: 1;
+        line-height: 1.1;
         color: var(--primary-text-color);
       }
       .primary-value-small {
-        font-size: 1.1em;
+        font-size: 1em;
         font-weight: 600;
         color: var(--primary-text-color);
+        white-space: nowrap;
+        margin-left: auto;
       }
       .primary-unit {
         font-size: 0.5em;
@@ -2142,14 +2130,15 @@ class StatusSummaryCard extends LitElement {
       .primary-name {
         font-size: 0.8em;
         color: var(--secondary-text-color);
-        margin-top: 4px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        white-space: nowrap;
       }
       
       .progress-container {
         width: 100%;
-        max-width: 160px;
+        min-width: 130px;
+        max-width: 170px;
         margin-top: 4px;
         display: flex;
         flex-direction: column;
@@ -2160,15 +2149,18 @@ class StatusSummaryCard extends LitElement {
         justify-content: space-between;
         align-items: baseline;
         width: 100%;
-        margin-bottom: 6px;
+        gap: 12px;
+        margin-bottom: 4px;
       }
       .progress-labels .primary-name, .progress-labels .secondary-name {
         margin-top: 0;
+        margin-right: 8px;
         text-align: left;
+        white-space: nowrap;
       }
       .progress-bar-bg {
         width: 100%;
-        height: 8px;
+        height: 7px;
         background: var(--secondary-background-color, rgba(120, 120, 120, 0.2));
         border-radius: 4px;
         overflow: hidden;
@@ -2182,7 +2174,7 @@ class StatusSummaryCard extends LitElement {
       .secondary-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px;
         margin-top: 8px;
       }
       .secondary-grid {
