@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.8";
+const CARD_VERSION = "1.0.9";
 
 console.info(
   `%c PASSABLE-STATUS-SUMMARY-CARD %c v${CARD_VERSION} IS LOADED `,
@@ -20,7 +20,18 @@ const css = LitElement.prototype.css;
 // --- VISUAL EDITOR ---
 class StatusSummaryCardEditor extends LitElement {
   static get properties() {
-    return { hass: {}, config: {}, _expandedItems: { type: Object }, _expandedAlerts: { type: Object }, _expandedQuickActions: { type: Object }, _expandedStatusIcons: { type: Object }, _expandedSections: { type: Object }, _users: { type: Array } };
+    return {
+      hass: {},
+      config: {},
+      _expandedItems: { type: Object },
+      _expandedAlerts: { type: Object },
+      _expandedQuickActions: { type: Object },
+      _expandedStatusIcons: { type: Object },
+      _expandedStatBlocks: { type: Object },
+      _expandedProgressRows: { type: Object },
+      _expandedSections: { type: Object },
+      _users: { type: Array }
+    };
   }
 
   constructor() {
@@ -29,7 +40,20 @@ class StatusSummaryCardEditor extends LitElement {
     this._expandedAlerts = {};
     this._expandedQuickActions = {};
     this._expandedStatusIcons = {};
-    this._expandedSections = { card_settings: true, background_settings: false, primary_info: false, secondary_info: false, status_icons: false, quick_actions: false, alerts: false };
+    this._expandedStatBlocks = {};
+    this._expandedProgressRows = {};
+    this._expandedSections = {
+      card_settings: true,
+      background_settings: false,
+      header_badge: false,
+      stat_blocks: false,
+      progress_rows: false,
+      primary_info: false,
+      secondary_info: false,
+      status_icons: false,
+      quick_actions: false,
+      alerts: false
+    };
     this._users = [];
   }
 
@@ -145,6 +169,78 @@ class StatusSummaryCardEditor extends LitElement {
         newActions[index][field] = value;
     }
     this.config = { ...this.config, quick_actions: newActions };
+    this._fireConfigChange();
+  }
+
+  _toggleStatBlock(index, ev) {
+    if (ev) ev.stopPropagation();
+    this._expandedStatBlocks = { ...(this._expandedStatBlocks || {}), [index]: !(this._expandedStatBlocks || {})[index] };
+    this.requestUpdate();
+  }
+
+  _addStatBlock(ev) {
+    if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+    const newBlocks = [...(this.config.stat_blocks || []), { label: '', entity: '' }];
+    this.config = { ...this.config, stat_blocks: newBlocks };
+    this._expandedStatBlocks = { ...(this._expandedStatBlocks || {}), [newBlocks.length - 1]: true };
+    this.requestUpdate();
+    this._fireConfigChange();
+  }
+
+  _removeStatBlock(index, ev) {
+    if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+    const newBlocks = [...(this.config.stat_blocks || [])];
+    newBlocks.splice(index, 1);
+    this.config = { ...this.config, stat_blocks: newBlocks };
+    this.requestUpdate();
+    this._fireConfigChange();
+  }
+
+  _updateStatBlock(index, field, value) {
+    const newBlocks = [...(this.config.stat_blocks || [])];
+    if (value === undefined || value === "") {
+      delete newBlocks[index][field];
+    } else {
+      newBlocks[index][field] = value;
+    }
+    this.config = { ...this.config, stat_blocks: newBlocks };
+    this.requestUpdate();
+    this._fireConfigChange();
+  }
+
+  _toggleProgressRow(index, ev) {
+    if (ev) ev.stopPropagation();
+    this._expandedProgressRows = { ...(this._expandedProgressRows || {}), [index]: !(this._expandedProgressRows || {})[index] };
+    this.requestUpdate();
+  }
+
+  _addProgressRow(ev) {
+    if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+    const newRows = [...(this.config.progress_rows || []), { name: '', entity: '' }];
+    this.config = { ...this.config, progress_rows: newRows };
+    this._expandedProgressRows = { ...(this._expandedProgressRows || {}), [newRows.length - 1]: true };
+    this.requestUpdate();
+    this._fireConfigChange();
+  }
+
+  _removeProgressRow(index, ev) {
+    if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+    const newRows = [...(this.config.progress_rows || [])];
+    newRows.splice(index, 1);
+    this.config = { ...this.config, progress_rows: newRows };
+    this.requestUpdate();
+    this._fireConfigChange();
+  }
+
+  _updateProgressRow(index, field, value) {
+    const newRows = [...(this.config.progress_rows || [])];
+    if (value === undefined || value === "") {
+      delete newRows[index][field];
+    } else {
+      newRows[index][field] = value;
+    }
+    this.config = { ...this.config, progress_rows: newRows };
+    this.requestUpdate();
     this._fireConfigChange();
   }
 
@@ -418,6 +514,214 @@ class StatusSummaryCardEditor extends LitElement {
                     ></ha-selector>
                 </div>
             `)}
+        </div>
+
+        <!-- HEADER STATUS BADGE -->
+        ${renderSectionHeader('header_badge', 'Header Status Badge (Optional)')}
+        <div style="display: ${this._expandedSections.header_badge ? 'block' : 'none'};">
+            <p><i>Display a compact pill status badge in the top right of the card header (e.g., "Internet up").</i></p>
+            <ha-selector
+                .hass=${this.hass}
+                .selector=${{ entity: {} }}
+                .value=${this.config.header_badge?.entity || ""}
+                .label=${"Status Entity"}
+                @value-changed=${(ev) => {
+                    const hb = { ...(this.config.header_badge || {}), entity: ev.detail.value };
+                    this.config = { ...this.config, header_badge: hb };
+                    this._fireConfigChange();
+                }}
+            ></ha-selector>
+            <ha-selector
+                .hass=${this.hass}
+                .selector=${{ text: {} }}
+                .value=${this.config.header_badge?.text || ""}
+                .label=${"Custom Badge Text (Optional, e.g. Internet up)"}
+                @value-changed=${(ev) => {
+                    const hb = { ...(this.config.header_badge || {}), text: ev.detail.value };
+                    this.config = { ...this.config, header_badge: hb };
+                    this._fireConfigChange();
+                }}
+            ></ha-selector>
+            <div class="side-by-side" style="margin-top: 16px;">
+                <ha-selector
+                    .hass=${this.hass}
+                    .selector=${{ select: { options: colorMapThemeOptions, custom_value: true } }}
+                    .value=${this.config.header_badge?.color || ""}
+                    .label=${"Dot / Text Color (Optional)"}
+                    @value-changed=${(ev) => {
+                        const hb = { ...(this.config.header_badge || {}), color: ev.detail.value };
+                        this.config = { ...this.config, header_badge: hb };
+                        this._fireConfigChange();
+                    }}
+                ></ha-selector>
+                <ha-selector
+                    .hass=${this.hass}
+                    .selector=${{ select: { options: colorMapThemeOptions, custom_value: true } }}
+                    .value=${this.config.header_badge?.bg_color || ""}
+                    .label=${"Badge Background Color (Optional)"}
+                    @value-changed=${(ev) => {
+                        const hb = { ...(this.config.header_badge || {}), bg_color: ev.detail.value };
+                        this.config = { ...this.config, header_badge: hb };
+                        this._fireConfigChange();
+                    }}
+                ></ha-selector>
+            </div>
+        </div>
+
+        <!-- STAT BLOCKS GRID -->
+        ${renderSectionHeader('stat_blocks', 'Stat Blocks Grid (Modular Tiles)', html`<ha-button @click=${(ev) => { ev.stopPropagation(); this._addStatBlock(ev); }}>Add Block</ha-button>`)}
+        <div style="display: ${this._expandedSections.stat_blocks ? 'block' : 'none'};">
+            <p><i>Display metric tiles in a responsive grid (e.g. Main Network speeds, IP addresses). If unconfigured or blank, this section takes zero space.</i></p>
+            <div class="list-editor">
+                ${(this.config.stat_blocks || []).map((block, index) => {
+                  const isExpanded = (this._expandedStatBlocks || {})[index];
+                  const blockTitle = block.label || block.entity || 'Block ' + (index + 1);
+                  return html`
+                    <div class="list-item">
+                        <div class="item-header" @click=${(ev) => this._toggleStatBlock(index, ev)} style="cursor: pointer; margin-bottom: ${isExpanded ? '12px' : '0'};">
+                            <div style="display: flex; align-items: center; gap: 4px; overflow: hidden;">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor; flex-shrink: 0;">
+                                    <path d="${isExpanded ? 'M7.41,8.59L12,13.17L16.59,8.59L18,10L12,16L6,10L7.41,8.59Z' : 'M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z'}"></path>
+                                </svg>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.95em;">${blockTitle}</span>
+                            </div>
+                            <div class="item-actions" @click=${(ev) => ev.stopPropagation()}>
+                                <ha-icon icon="mdi:delete" @click=${(ev) => this._removeStatBlock(index, ev)} style="cursor: pointer; padding: 8px;"></ha-icon>
+                            </div>
+                        </div>
+                        ${isExpanded ? html`
+                          <div class="item-content">
+                              <ha-selector
+                                  .hass=${this.hass}
+                                  .selector=${{ text: {} }}
+                                  .value=${block.label || ""}
+                                  .label=${"Block Label (e.g. MAIN NETWORK, WAN IP)"}
+                                  @value-changed=${(ev) => this._updateStatBlock(index, 'label', ev.detail.value)}
+                              ></ha-selector>
+                              <div class="side-by-side" style="margin-top: 16px;">
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ entity: {} }}
+                                      .value=${block.entity || ""}
+                                      .label=${"Primary Entity"}
+                                      @value-changed=${(ev) => this._updateStatBlock(index, 'entity', ev.detail.value)}
+                                  ></ha-selector>
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ entity: {} }}
+                                      .value=${block.secondary_entity || ""}
+                                      .label=${"Secondary Entity (for dual e.g. down/up)"}
+                                      @value-changed=${(ev) => this._updateStatBlock(index, 'secondary_entity', ev.detail.value)}
+                                  ></ha-selector>
+                              </div>
+                              <div class="side-by-side" style="margin-top: 16px;">
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ text: {} }}
+                                      .value=${block.unit || ""}
+                                      .label=${"Unit (Optional, e.g. Mbps)"}
+                                      @value-changed=${(ev) => this._updateStatBlock(index, 'unit', ev.detail.value)}
+                                  ></ha-selector>
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ text: {} }}
+                                      .value=${block.caption || ""}
+                                      .label=${"Caption / Subtitle (Optional)"}
+                                      @value-changed=${(ev) => this._updateStatBlock(index, 'caption', ev.detail.value)}
+                                  ></ha-selector>
+                              </div>
+                              <ha-selector
+                                  .hass=${this.hass}
+                                  .selector=${{ ui_action: {} }}
+                                  .value=${block.tap_action || { action: "more-info" }}
+                                  .label=${"Tap Action"}
+                                  @value-changed=${(ev) => this._updateStatBlock(index, 'tap_action', ev.detail.value)}
+                                  style="margin-top: 16px;"
+                              ></ha-selector>
+                          </div>
+                        ` : ''}
+                    </div>
+                  `;
+                })}
+            </div>
+        </div>
+
+        <!-- PROGRESS BAR ROWS -->
+        ${renderSectionHeader('progress_rows', 'Progress Bar Rows (Modular Rows)', html`<ha-button @click=${(ev) => { ev.stopPropagation(); this._addProgressRow(ev); }}>Add Progress Row</ha-button>`)}
+        <div style="display: ${this._expandedSections.progress_rows ? 'block' : 'none'};">
+            <p><i>Display horizontal progress bars with status dots and secondary metrics (e.g. Storage, Memory). If unconfigured or blank, this section takes zero space.</i></p>
+            <div class="list-editor">
+                ${(this.config.progress_rows || []).map((row, index) => {
+                  const isExpanded = (this._expandedProgressRows || {})[index];
+                  const rowTitle = row.name || row.entity || 'Progress Row ' + (index + 1);
+                  return html`
+                    <div class="list-item">
+                        <div class="item-header" @click=${(ev) => this._toggleProgressRow(index, ev)} style="cursor: pointer; margin-bottom: ${isExpanded ? '12px' : '0'};">
+                            <div style="display: flex; align-items: center; gap: 4px; overflow: hidden;">
+                                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor; flex-shrink: 0;">
+                                    <path d="${isExpanded ? 'M7.41,8.59L12,13.17L16.59,8.59L18,10L12,16L6,10L7.41,8.59Z' : 'M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z'}"></path>
+                                </svg>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.95em;">${rowTitle}</span>
+                            </div>
+                            <div class="item-actions" @click=${(ev) => ev.stopPropagation()}>
+                                <ha-icon icon="mdi:delete" @click=${(ev) => this._removeProgressRow(index, ev)} style="cursor: pointer; padding: 8px;"></ha-icon>
+                            </div>
+                        </div>
+                        ${isExpanded ? html`
+                          <div class="item-content">
+                              <ha-selector
+                                  .hass=${this.hass}
+                                  .selector=${{ text: {} }}
+                                  .value=${row.name || ""}
+                                  .label=${"Row Name (e.g. Internal Storage, Memory)"}
+                                  @value-changed=${(ev) => this._updateProgressRow(index, 'name', ev.detail.value)}
+                              ></ha-selector>
+                              <div class="side-by-side" style="margin-top: 16px;">
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ entity: {} }}
+                                      .value=${row.entity || ""}
+                                      .label=${"Primary Metric Entity"}
+                                      @value-changed=${(ev) => this._updateProgressRow(index, 'entity', ev.detail.value)}
+                                  ></ha-selector>
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ text: {} }}
+                                      .value=${row.unit || ""}
+                                      .label=${"Unit (Optional, default: %)"}
+                                      @value-changed=${(ev) => this._updateProgressRow(index, 'unit', ev.detail.value)}
+                                  ></ha-selector>
+                              </div>
+                              <div class="side-by-side" style="margin-top: 16px;">
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ entity: {} }}
+                                      .value=${row.secondary_entity || ""}
+                                      .label=${"Secondary Metric Entity (Optional, e.g. Temp)"}
+                                      @value-changed=${(ev) => this._updateProgressRow(index, 'secondary_entity', ev.detail.value)}
+                                  ></ha-selector>
+                                  <ha-selector
+                                      .hass=${this.hass}
+                                      .selector=${{ select: { options: colorMapThemeOptions, custom_value: true } }}
+                                      .value=${row.color || ""}
+                                      .label=${"Bar Fill Color (Optional)"}
+                                      @value-changed=${(ev) => this._updateProgressRow(index, 'color', ev.detail.value)}
+                                  ></ha-selector>
+                              </div>
+                              <ha-selector
+                                  .hass=${this.hass}
+                                  .selector=${{ ui_action: {} }}
+                                  .value=${row.tap_action || { action: "more-info" }}
+                                  .label=${"Tap Action"}
+                                  @value-changed=${(ev) => this._updateProgressRow(index, 'tap_action', ev.detail.value)}
+                                  style="margin-top: 16px;"
+                              ></ha-selector>
+                          </div>
+                        ` : ''}
+                    </div>
+                  `;
+                })}
+            </div>
         </div>
 
         <!-- 3. PRIMARY INFORMATION -->
@@ -1550,6 +1854,181 @@ class StatusSummaryCard extends LitElement {
     `;
   }
 
+  _renderHeaderBadge(badge) {
+    if (!badge || !badge.text) return '';
+    return html`
+      <div
+        class="header-badge-pill"
+        style="background: ${badge.bg}; color: ${badge.color};"
+        @click=${(ev) => {
+          ev.stopPropagation();
+          if (badge.tap_action) {
+            this._executeActionConfig(badge.tap_action, badge.entityId);
+          } else if (badge.entityId) {
+            this._handleEntityClick(ev, badge.entityId);
+          }
+        }}
+        title="${badge.entityId ? `${badge.entityId}: ${badge.text}` : badge.text}"
+      >
+        ${badge.icon
+          ? html`<ha-icon icon="${badge.icon}" style="--mdc-icon-size: 13px; color: ${badge.color};"></ha-icon>`
+          : html`<span class="header-badge-dot" style="background: ${badge.color};"></span>`
+        }
+        <span>${badge.text}</span>
+      </div>
+    `;
+  }
+
+  _renderStatBlocks() {
+    if (!this.config.stat_blocks || !Array.isArray(this.config.stat_blocks) || this.config.stat_blocks.length === 0) {
+      return '';
+    }
+
+    const validBlocks = this.config.stat_blocks.filter(b => b && (b.entity || b.value !== undefined || b.label));
+    if (validBlocks.length === 0) return '';
+
+    return html`
+      <div class="stat-blocks-grid">
+        ${validBlocks.map((block) => {
+          let val1 = "N/A";
+          let val2 = null;
+          let unit = block.unit || "";
+
+          if (block.entity && this.hass.states[block.entity]) {
+            const sObj = this.hass.states[block.entity];
+            val1 = (block.attribute && sObj.attributes[block.attribute] !== undefined)
+              ? sObj.attributes[block.attribute]
+              : sObj.state;
+            if (!unit && sObj.attributes.unit_of_measurement) {
+              unit = sObj.attributes.unit_of_measurement;
+            }
+          } else if (block.value !== undefined) {
+            val1 = block.value;
+          }
+
+          if (block.secondary_entity && this.hass.states[block.secondary_entity]) {
+            const s2Obj = this.hass.states[block.secondary_entity];
+            val2 = (block.secondary_attribute && s2Obj.attributes[block.secondary_attribute] !== undefined)
+              ? s2Obj.attributes[block.secondary_attribute]
+              : s2Obj.state;
+          } else if (block.secondary_value !== undefined) {
+            val2 = block.secondary_value;
+          }
+
+          const displayValue = val2 !== null ? `${val1} / ${val2}` : `${val1}`;
+          const label = block.label || (block.entity && this.hass.states[block.entity]?.attributes?.friendly_name) || "";
+          const caption = block.caption || block.subtitle || "";
+          const colorStyle = block.color ? `color: ${block.color};` : '';
+
+          return html`
+            <div
+              class="stat-block clickable-item"
+              @click=${(ev) => {
+                ev.stopPropagation();
+                if (block.tap_action) {
+                  this._executeActionConfig(block.tap_action, block.entity);
+                } else if (block.entity) {
+                  this._handleEntityClick(ev, block.entity);
+                }
+              }}
+            >
+              ${label ? html`<div class="stat-block-label">${label}</div>` : ''}
+              <div class="stat-block-value-row">
+                ${block.icon ? html`<ha-icon icon="${block.icon}" class="stat-block-icon"></ha-icon>` : ''}
+                <span class="stat-block-value" style="${colorStyle}">${displayValue}</span>
+                ${unit ? html`<span class="stat-block-unit">${unit}</span>` : ''}
+              </div>
+              ${caption ? html`<div class="stat-block-caption">${caption}</div>` : ''}
+            </div>
+          `;
+        })}
+      </div>
+    `;
+  }
+
+  _renderProgressRows() {
+    if (!this.config.progress_rows || !Array.isArray(this.config.progress_rows) || this.config.progress_rows.length === 0) {
+      return '';
+    }
+
+    const validRows = this.config.progress_rows.filter(r => r && (r.entity || r.value !== undefined || r.name));
+    if (validRows.length === 0) return '';
+
+    return html`
+      <div class="progress-rows-container">
+        ${validRows.map((row) => {
+          let stateVal = "N/A";
+          let unitVal = row.unit !== undefined ? row.unit : "";
+          const stateObj = row.entity ? this.hass.states[row.entity] : null;
+
+          if (stateObj) {
+            if (row.attribute && stateObj.attributes[row.attribute] !== undefined) {
+              stateVal = stateObj.attributes[row.attribute];
+            } else {
+              stateVal = stateObj.state;
+              if (unitVal === "" && stateObj.attributes.unit_of_measurement) {
+                unitVal = stateObj.attributes.unit_of_measurement;
+              }
+            }
+          } else if (row.value !== undefined) {
+            stateVal = row.value;
+          }
+
+          const numVal = parseFloat(stateVal);
+          const min = row.min ?? 0;
+          const max = row.max ?? 100;
+          let pct = 0;
+          if (!isNaN(numVal)) {
+            pct = Math.max(0, Math.min(100, ((numVal - min) / (max - min)) * 100));
+          } else if (['on', 'home', 'active', 'true', 'ok', 'up'].includes(String(stateVal).toLowerCase())) {
+            pct = 100;
+          }
+
+          let secVal = "";
+          if (row.secondary_entity && this.hass.states[row.secondary_entity]) {
+            const s2 = this.hass.states[row.secondary_entity];
+            const s2Val = row.secondary_attribute ? s2.attributes[row.secondary_attribute] : s2.state;
+            const s2Unit = row.secondary_unit !== undefined ? row.secondary_unit : (s2.attributes.unit_of_measurement || "");
+            secVal = `${s2Val}${s2Unit}`;
+          } else if (row.secondary_value !== undefined) {
+            secVal = row.secondary_value;
+          }
+
+          const label = row.name || (stateObj?.attributes?.friendly_name) || row.entity || "";
+          const fillColor = row.color || 'var(--primary-color, #0284c7)';
+          const dotColor = row.status_color || 'var(--success-color, #22c55e)';
+          const showDot = row.status_dot !== false;
+
+          return html`
+            <div
+              class="progress-row-item clickable-item"
+              @click=${(ev) => {
+                ev.stopPropagation();
+                if (row.tap_action) {
+                  this._executeActionConfig(row.tap_action, row.entity);
+                } else if (row.entity) {
+                  this._handleEntityClick(ev, row.entity);
+                }
+              }}
+            >
+              <div class="progress-row-lead">
+                ${showDot ? html`<span class="progress-row-dot" style="background-color: ${dotColor};"></span>` : ''}
+                <span class="progress-row-name">${label}</span>
+              </div>
+              <div class="progress-row-track">
+                <div class="progress-row-fill" style="width: ${pct}%; background-color: ${fillColor};"></div>
+              </div>
+              <div class="progress-row-values">
+                <span class="progress-row-pct">${stateVal}${unitVal}</span>
+                ${secVal ? html`<span class="progress-row-secondary">${secVal}</span>` : ''}
+              </div>
+            </div>
+          `;
+        })}
+      </div>
+    `;
+  }
+
   render() {
     if (!this.config || !this.hass) return html``;
 
@@ -1654,6 +2133,43 @@ class StatusSummaryCard extends LitElement {
         ? `background-image: url('${this.config.background_image}'); background-size: cover; background-position: center;`
         : '';
 
+    // Primary Info existence
+    const hasPrimaryInfo = !!(this.config.primary_info && (this.config.primary_info.entity || this.config.primary_info.value));
+    const hasAlertsOrIcons = (this.config.status_icons && this.config.status_icons.length > 0) ||
+                             ((this.config.show_header_alerts !== false) && activeAlerts.length > 0);
+
+    // Evaluate Header Badge
+    let headerBadge = null;
+    if (this.config.header_badge) {
+      const hb = this.config.header_badge;
+      const hbEntityId = typeof hb === 'string' ? hb : hb.entity;
+      const hbStateObj = hbEntityId ? this.hass.states[hbEntityId] : null;
+      let hbText = (typeof hb === 'object' && hb.text) ? hb.text : (hbStateObj ? hbStateObj.state : '');
+      let hbIcon = (typeof hb === 'object' && hb.icon) ? hb.icon : null;
+      let hbColor = (typeof hb === 'object' && hb.color) ? hb.color : null;
+      let hbBg = (typeof hb === 'object' && hb.bg_color) ? hb.bg_color : null;
+      let hbAction = (typeof hb === 'object' && hb.tap_action) ? hb.tap_action : null;
+
+      const isOn = hbStateObj ? ['on', 'home', 'active', 'up', 'connected', 'true', 'online'].includes(String(hbStateObj.state).toLowerCase()) : true;
+      if (!hbColor) {
+        hbColor = isOn ? 'var(--success-color, #22c55e)' : 'var(--error-color, #ef4444)';
+      }
+      if (!hbBg) {
+        hbBg = isOn ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+      }
+
+      if (hbText || hbIcon) {
+        headerBadge = {
+          text: hbText,
+          icon: hbIcon,
+          color: hbColor,
+          bg: hbBg,
+          entityId: hbEntityId,
+          tap_action: hbAction
+        };
+      }
+    }
+
     return html`
       <ha-card @click="${this._handleAction}" tabindex="0" style="${cardBgStyle}">
         ${cardBackground ? html`<div class="card-background-overlay" style="background: ${cardBackground}; opacity: ${cardIntensity};"></div>` : ''}
@@ -1721,84 +2237,93 @@ class StatusSummaryCard extends LitElement {
               </div>
             </div>
             
-            <div class="primary-info">
-              <div class="alerts-container">
-                ${this.config.status_icons ? this.config.status_icons.map(iconObj => {
-                  const isString = typeof iconObj === 'string';
-                  const entityId = isString ? iconObj : iconObj.entity;
-                  if (!entityId) return '';
-                  
-                  const stateObj = this.hass.states[entityId];
-                  if (!stateObj) return '';
-                  
-                  const isActive = ['home', 'on', 'active', 'playing', 'open', 'unlocked', 'true'].includes(String(stateObj.state).toLowerCase());
+            ${(hasPrimaryInfo || hasAlertsOrIcons || headerBadge) ? html`
+              <div class="primary-info">
+                ${headerBadge ? this._renderHeaderBadge(headerBadge) : ''}
 
-                  if (this.config.status_icons_active_only && !isActive) return '';
-                  
-                  let customIcon = '';
-                  let iconColor = '';
-                  let bgColor = '';
+                ${hasAlertsOrIcons ? html`
+                  <div class="alerts-container">
+                    ${this.config.status_icons ? this.config.status_icons.map(iconObj => {
+                      const isString = typeof iconObj === 'string';
+                      const entityId = isString ? iconObj : iconObj.entity;
+                      if (!entityId) return '';
+                      
+                      const stateObj = this.hass.states[entityId];
+                      if (!stateObj) return '';
+                      
+                      const isActive = ['home', 'on', 'active', 'playing', 'open', 'unlocked', 'true'].includes(String(stateObj.state).toLowerCase());
 
-                  if (!isString) {
-                      if (isActive) {
-                          if (iconObj.icon_on) customIcon = iconObj.icon_on;
-                          if (iconObj.icon_color_on) iconColor = iconObj.icon_color_on;
-                          if (iconObj.bg_color_on) bgColor = iconObj.bg_color_on;
-                      } else {
-                          if (iconObj.icon_off) customIcon = iconObj.icon_off;
-                          if (iconObj.icon_color_off) iconColor = iconObj.icon_color_off;
-                          if (iconObj.bg_color_off) bgColor = iconObj.bg_color_off;
+                      if (this.config.status_icons_active_only && !isActive) return '';
+                      
+                      let customIcon = '';
+                      let iconColor = '';
+                      let bgColor = '';
+
+                      if (!isString) {
+                          if (isActive) {
+                              if (iconObj.icon_on) customIcon = iconObj.icon_on;
+                              if (iconObj.icon_color_on) iconColor = iconObj.icon_color_on;
+                              if (iconObj.bg_color_on) bgColor = iconObj.bg_color_on;
+                          } else {
+                              if (iconObj.icon_off) customIcon = iconObj.icon_off;
+                              if (iconObj.icon_color_off) iconColor = iconObj.icon_color_off;
+                              if (iconObj.bg_color_off) bgColor = iconObj.bg_color_off;
+                          }
                       }
-                  }
-                  
-                  const styleStr = (iconColor ? `color: ${iconColor}; ` : '') + (bgColor ? `background-color: ${bgColor}; padding: 4px; border-radius: 50%; ` : '');
-                  
-                  return html`
-                    <div class="status-icon-indicator clickable-item" 
-                         title="${stateObj.attributes.friendly_name || entityId}: ${stateObj.state}"
-                         @mousedown=${this._handleStatusIconStart}
-                         @mouseup=${(ev) => this._handleStatusIconEnd(ev, iconObj)}
-                         @touchstart=${this._handleStatusIconStart}
-                         @touchend=${(ev) => this._handleStatusIconEnd(ev, iconObj)}
-                         @touchcancel=${() => { this._statusIconTimer = null; }}
-                         @click=${(ev) => ev.stopPropagation()}>
-                      ${customIcon 
-                        ? html`<ha-icon icon="${customIcon}" style="${styleStr}"></ha-icon>`
-                        : (stateObj.attributes.entity_picture
-                            ? html`<img src="${stateObj.attributes.entity_picture}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; ${styleStr}" />`
-                            : html`<ha-state-icon .hass=${this.hass} .stateObj=${stateObj} style="${styleStr}"></ha-state-icon>`
-                          )
-                      }
+                      
+                      const styleStr = (iconColor ? `color: ${iconColor}; ` : '') + (bgColor ? `background-color: ${bgColor}; padding: 4px; border-radius: 50%; ` : '');
+                      
+                      return html`
+                        <div class="status-icon-indicator clickable-item" 
+                             title="${stateObj.attributes.friendly_name || entityId}: ${stateObj.state}"
+                             @mousedown=${this._handleStatusIconStart}
+                             @mouseup=${(ev) => this._handleStatusIconEnd(ev, iconObj)}
+                             @touchstart=${this._handleStatusIconStart}
+                             @touchend=${(ev) => this._handleStatusIconEnd(ev, iconObj)}
+                             @touchcancel=${() => { this._statusIconTimer = null; }}
+                             @click=${(ev) => ev.stopPropagation()}>
+                          ${customIcon 
+                            ? html`<ha-icon icon="${customIcon}" style="${styleStr}"></ha-icon>`
+                            : (stateObj.attributes.entity_picture
+                                ? html`<img src="${stateObj.attributes.entity_picture}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; ${styleStr}" />`
+                                : html`<ha-state-icon .hass=${this.hass} .stateObj=${stateObj} style="${styleStr}"></ha-state-icon>`
+                              )
+                          }
+                        </div>
+                      `;
+                    }) : ''}
+                    
+                    ${(this.config.show_header_alerts !== false) ? activeAlerts.map(alert => html`
+                      <div class="alert-indicator clickable-item" style="background-color: ${alert.color || 'var(--error-color)'};" title="${alert.entity}" @click=${(ev) => this._handleAlertClick(ev, alert)}>
+                        <ha-icon icon="${alert.icon || 'mdi:alert'}"></ha-icon>
+                      </div>
+                    `) : ''}
+                  </div>
+                ` : ''}
+
+                ${hasPrimaryInfo ? (showGauge ? html`
+                  <div class="progress-container clickable-item" @click=${(ev) => this._handleEntityClick(ev, this.config.primary_info?.entity)}>
+                    <div class="progress-labels">
+                      ${!this.config.primary_info?.hide_name ? html`<span class="primary-name">${primaryName}</span>` : ''}
+                      <span class="primary-value-small">${primaryState}${primaryUnit}</span>
                     </div>
-                  `;
-                }) : ''}
-                
-                ${(this.config.show_header_alerts !== false) ? activeAlerts.map(alert => html`
-                  <div class="alert-indicator clickable-item" style="background-color: ${alert.color || 'var(--error-color)'};" title="${alert.entity}" @click=${(ev) => this._handleAlertClick(ev, alert)}>
-                    <ha-icon icon="${alert.icon || 'mdi:alert'}"></ha-icon>
+                    <div class="progress-bar-bg">
+                      <div class="progress-bar-fill" style="width: ${gaugePct}%; background: ${primaryColor};"></div>
+                    </div>
+                  </div>
+                ` : html`
+                  <div class="clickable-item" style="display: flex; flex-direction: column; align-items: flex-end;" @click=${(ev) => this._handleEntityClick(ev, this.config.primary_info?.entity)}>
+                    <div class="primary-value">${primaryState}<span class="primary-unit">${primaryUnit}</span></div>
+                    ${!this.config.primary_info?.hide_name ? html`<div class="primary-name">${primaryName}</div>` : ''}
+                    ${this._renderExtraInfo(primaryStateObj, this.config.primary_info?.extra_info)}
                   </div>
                 `) : ''}
               </div>
-
-              ${showGauge ? html`
-                <div class="progress-container clickable-item" @click=${(ev) => this._handleEntityClick(ev, this.config.primary_info?.entity)}>
-                  <div class="progress-labels">
-                    ${!this.config.primary_info?.hide_name ? html`<span class="primary-name">${primaryName}</span>` : ''}
-                    <span class="primary-value-small">${primaryState}${primaryUnit}</span>
-                  </div>
-                  <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: ${gaugePct}%; background: ${primaryColor};"></div>
-                  </div>
-                </div>
-              ` : html`
-                <div class="clickable-item" style="display: flex; flex-direction: column; align-items: flex-end;" @click=${(ev) => this._handleEntityClick(ev, this.config.primary_info?.entity)}>
-                  <div class="primary-value">${primaryState}<span class="primary-unit">${primaryUnit}</span></div>
-                  ${!this.config.primary_info?.hide_name ? html`<div class="primary-name">${primaryName}</div>` : ''}
-                  ${this._renderExtraInfo(primaryStateObj, this.config.primary_info?.extra_info)}
-                </div>
-              `}
-            </div>
+            ` : ''}
           </div>
+
+          ${this._renderStatBlocks()}
+          ${this._renderProgressRows()}
           
           ${this.config.secondary_info && this.config.secondary_info.length > 0 ? html`
             <div class="secondary-row ${layoutStyle === 'grid' ? 'secondary-grid' : (layoutStyle === 'rings' ? 'secondary-rings' : '')}">
@@ -2099,6 +2624,171 @@ class StatusSummaryCard extends LitElement {
       .quick-action-btn ha-icon {
         --mdc-icon-size: 16px;
       }
+      .header-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        flex-shrink: 0;
+        white-space: nowrap;
+        user-select: none;
+        transition: opacity 0.15s ease;
+      }
+      .header-badge-pill:hover {
+        opacity: 0.85;
+      }
+      .header-badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .stat-blocks-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .stat-block {
+        background: var(--secondary-background-color, rgba(128, 128, 128, 0.12));
+        border: 1px solid var(--divider-color, rgba(255, 255, 255, 0.08));
+        border-radius: 10px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 52px;
+        box-sizing: border-box;
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+      .stat-block:hover {
+        background: var(--secondary-background-color, rgba(128, 128, 128, 0.18));
+        border-color: rgba(var(--rgb-primary-color, 3, 169, 244), 0.35);
+      }
+      .stat-block-label {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: var(--secondary-text-color, #888);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.1;
+        margin-bottom: 2px;
+      }
+      .stat-block-value-row {
+        display: flex;
+        align-items: baseline;
+        gap: 2px;
+        min-width: 0;
+      }
+      .stat-block-icon {
+        --mdc-icon-size: 14px;
+        margin-right: 3px;
+        color: var(--primary-color);
+        align-self: center;
+      }
+      .stat-block-value {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--primary-text-color);
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .stat-block-unit {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--secondary-text-color, #888);
+        margin-left: 2px;
+      }
+      .stat-block-caption {
+        font-size: 0.62rem;
+        color: var(--secondary-text-color, #888);
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.1;
+      }
+      .progress-rows-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .progress-row-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 6px;
+        border-radius: 8px;
+        transition: background 0.15s ease;
+      }
+      .progress-row-item:hover {
+        background: rgba(128, 128, 128, 0.08);
+      }
+      .progress-row-lead {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 90px;
+        max-width: 140px;
+        flex-shrink: 0;
+      }
+      .progress-row-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .progress-row-name {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--primary-text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .progress-row-track {
+        flex: 1;
+        height: 6px;
+        background: rgba(128, 128, 128, 0.2);
+        border-radius: 9999px;
+        overflow: hidden;
+        position: relative;
+        min-width: 50px;
+      }
+      .progress-row-fill {
+        height: 100%;
+        border-radius: 9999px;
+        transition: width 0.3s ease;
+      }
+      .progress-row-values {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .progress-row-pct {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--primary-text-color);
+        min-width: 34px;
+        text-align: right;
+      }
+      .progress-row-secondary {
+        font-size: 0.72rem;
+        color: var(--secondary-text-color, #888);
+        min-width: 30px;
+        text-align: right;
+      }
       .primary-info {
         text-align: right;
         display: flex;
@@ -2107,6 +2797,7 @@ class StatusSummaryCard extends LitElement {
         justify-content: flex-start;
         flex-shrink: 0;
         min-width: 0;
+        gap: 4px;
       }
       .primary-value {
         font-size: 1.8em;
