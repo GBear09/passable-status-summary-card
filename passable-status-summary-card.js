@@ -3,7 +3,7 @@
  * A flexible summary card for entities like Vehicles and System Nodes.
  */
 
-const CARD_VERSION = "1.0.9";
+const CARD_VERSION = "1.0.10";
 
 console.info(
   `%c PASSABLE-STATUS-SUMMARY-CARD %c v${CARD_VERSION} IS LOADED `,
@@ -1838,7 +1838,8 @@ class StatusSummaryCard extends LitElement {
     }
     
     const areaPath = `${d} L 100 100 L 0 100 Z`;
-    const gradId = "grad-" + Math.random().toString(36).substr(2, 9);
+    const safeEntity = (this.config?.primary_info?.entity || "spark").replace(/[^a-z0-9]/gi, "_");
+    const gradId = `grad-${safeEntity}`;
 
     return html`
       <svg class="sparkline-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -2609,8 +2610,8 @@ class StatusSummaryCard extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 30px;
-        height: 30px;
+        width: 36px; min-width: 36px; height: 36px; min-height: 36px;
+        /* height set above */
         border-radius: 50%;
         background-color: var(--secondary-background-color, rgba(120, 120, 120, 0.2));
         color: var(--primary-text-color);
